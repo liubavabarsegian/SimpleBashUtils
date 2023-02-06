@@ -22,6 +22,7 @@ declare -a extra=(
 "-n test1.txt"
 "-n test1.txt test2.txt"
 "-v test5.txt"
+"abc no_file.txt"
 # "-E test127.txt"
 # "--number-nonblank test2.txt"
 # " --number test5.txt"

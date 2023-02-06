@@ -67,13 +67,13 @@ int find_illegal_flags(int argc, char **argv) {
   while (i < argc && argv[i][0] == '-') {
     // for GNU
     if (argv[i][1] == '-' && find_not_flag(argv[i], &wrong_flag)) {
-      printf("%s%s\n", "cat: illegal option -- ", argv[i]);
+      fprintf(stderr, "cat: illegal option -- %s\n", argv[i]);
       return 1;
     }
     // for SIMPLE flags
     else if (find_not_flag(argv[i], &wrong_flag)) {
-      printf("%s%c\n", "cat: illegal option -- ", wrong_flag);
-      printf("usage: cat [-benstuv] [file ...]\n");
+      fprintf(stderr, "cat: illegal option -- %c\n", wrong_flag);
+      fprintf(stderr, "usage: cat [-benstuv] [file ...]\n");
       return 1;
     }
     i++;

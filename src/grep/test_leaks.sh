@@ -1,48 +1,82 @@
-leakmacro () {
-  leaks -atExit -- ./s21_grep $1 $2 $3 $4 $5 $6 $7 $8 $9 > leak.log
-  grep -i errors leak.log 
+#!/bin/bash
+
+LEAK_COUNTER=0
+COUNTER=0
+
+declare -a multy_testing=(
+"VAR"
+"VAR test1.txt"
+"test127.txt VAR"
+"test.txt"
+"D VAR test1.txt"
+"S VAR test1.txt test2.txt test1.txt"
+"-e s VAR -o test3.txt"
+"-e ^int VAR test1.txt test2.txt test1.txt"
+"-f pattern_file.txt test3.txt test2.txt test1.txt"
+"-f pattern_file.txt test3.txt test2.txt test6.txt"
+)
+
+declare -a unique_testing=(
+"abc no_file.txt"
+"abc -f no_file -ivclnhso no_file.txt"
+"-e S -i -nh test2.txt test1.txt test2.txt test1.txt"
+"-e char -v test2.txt test1.txt"
+"-e int grep.c"
+)
+
+vg_checking () {
+  t=$(echo $@ | sed "s/VAR/$var/")
+  #linux
+  # valgrind --tool=memcheck --leak-check=full --track-origins=yes --show-reachable=yes --num-callers=20 --track-fds=yes --log-file="vg_info.log" ./s21_grep $t > vg_out.log
+  
+  #ios
+  leaks -atExit -- ./s21_grep $t > vg_out.log
+  VG_RES="$(grep LEAK -c vg_out.log)"
+
+  #linux
+  # VG_RES="$(grep LEAK -c vg_info.log)"
+  (( COUNTER++ ))
+  if [ "$VG_RES" == "0" ]
+    then
+        echo "$COUNTER: NO LEAKS"
+        echo "$t"
+    else
+      (( LEAK_COUNTER++ ))
+        echo "$COUNTER: THERE ARE LEAKS"
+        exit 1
+  fi
+  rm vg_out.log
+  #  linux
+  # rm vg_info.log vg_out.log
 }
 
-filename1=test_leaks.sh;
-filename2=grep.c;
-filename3=pattern_file.txt
-filename4=grep.h;
-pattern1=S
 
-echo ----------------------------------------------*GREP LEAK CHECK 1
-leakmacro ./s21_grep "$pattern1" "$filename2" "$filename1"
-echo ----------------------------------------------*GREP LEAK CHECK 1 -e
-leakmacro ./s21_grep -e "$pattern1" "$filename2" "$filename1"
-echo ----------------------------------------------*GREP LEAK CHECK 2
-leakmacro ./s21_grep -i "$pattern1" "$filename1"
-echo ----------------------------------------------*GREP LEAK CHECK 3
-leakmacro ./s21_grep -v "$pattern1" "$filename1"
-echo ----------------------------------------------*GREP LEAK CHECK 4
-leakmacro ./s21_grep -c "$pattern1" "$filename1"
-echo ----------------------------------------------*GREP LEAK CHECK 5
-leakmacro ./s21_grep -l "$pattern1" "$filename2" "$filename3" "$filename1"
-echo ----------------------------------------------*GREP LEAK CHECK 6
-leakmacro ./s21_grep -n "$pattern1" "$filename1"
-echo ----------------------------------------------*GREP LEAK CHECK 7 BONUS
-leakmacro ./s21_grep -h "$pattern1" "$filename1"
-echo ----------------------------------------------*GREP LEAK CHECK 8 BONUS
-leakmacro ./s21_grep -o "$pattern1" "$filename1"
-echo ----------------------------------------------*GREP LEAK CHECK 9 BONUS
-leakmacro ./s21_grep -h "$pattern1" "$filename2" "$filename1"
-echo ----------------------------------------------*GREP LEAK CHECK 10 BONUS
-leakmacro ./s21_grep "$pattern1" -s aboba
-echo ----------------------------------------------*GREP LEAK CHECK 11 BONUS
-leakmacro ./s21_grep -f "$filename3" "$filename2"
-echo ----------------------------------------------*GREP LEAK CHECK 12 BONUS
-leakmacro ./s21_grep -in "$pattern1" "$filename1"
-echo ----------------------------------------------*GREP LEAK CHECK 13 BONUS
-leakmacro ./s21_grep -cv "$pattern1" "$filename1"
-echo ----------------------------------------------*GREP LEAK CHECK 14 BONUS
-leakmacro ./s21_grep -iv "$pattern1" "$filename1"
-echo ----------------------------------------------*GREP LEAK CHECK 15 BONUS
-leakmacro ./s21_grep -lv "$pattern1" "$filename2" "$filename3" "$filename1"
-echo ----------------------------------------------*GREP LEAK CHECK 16 BONUS
-leakmacro ./s21_grep -ho "$pattern1" "$filename2" "$filename1"
-echo ----------------------------------------------*GREP LEAK CHECK 17 BONUS
-leakmacro ./s21_grep -nf "$filename3" "$filename2"
-echo ----------------------------------------------*Leak tests ended*
+for var1 in e i v c l n h s o
+do
+  for i in "${multy_testing[@]}"
+  do
+    var="-$var1"
+    vg_checking $i
+  done
+done
+
+for var1 in e i v c l n h s o
+do
+  for var2 in e i v c l n h s o
+  do
+    for i in "${multy_testing[@]}"
+      do
+        var="-$var1$var2"
+        vg_checking $i
+      done
+  done
+done
+
+for i in "${unique_testing[@]}"
+do
+    var="-"
+    vg_checking $i
+done
+
+echo "LEAKS: $LEAK_COUNTER"
+echo "ALL: $COUNTER"

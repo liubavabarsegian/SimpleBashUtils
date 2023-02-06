@@ -41,10 +41,7 @@ void print_char(unsigned char c) {
     } else if (c >= 160 && c <= 192) {
       c -= 128;
       printf("M-%c", c);
-    }
-
-    // else if ()
-    else
+    } else
       printf("%c", c);
   } else
     printf("%c", c);
@@ -140,9 +137,9 @@ void iterating_over_files(int argc, char **argv) {
   }
   while (i < argc) {
     if (!file_exists(argv[i])) {
-      printf("cat: %s: No such file or directory\n", argv[i]);
+      fprintf(stderr, "cat: %s: No such file or directory\n", argv[i]);
     } else {
-		print_file(argv[i]);
+      print_file(argv[i]);
     }
     i++;
   }
