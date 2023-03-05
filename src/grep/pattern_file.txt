@@ -1,9 +1,0 @@
-Vs
-S
-Str
-^v
-d
-Sdf
-^St
-s$
-^H
